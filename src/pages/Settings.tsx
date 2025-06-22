@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Settings as SettingsIcon, Clock, Phone, Mail, Webhook, Bell } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ThemeEditor } from '@/components/ThemeEditor';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -189,22 +188,8 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-barbershop-gold">Configurações de Tema</CardTitle>
-            <CardDescription>Personalize a aparência do sistema</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center py-8">
-              <SettingsIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Editor de Tema</h3>
-              <p className="text-muted-foreground">Funcionalidade em desenvolvimento</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Em breve você poderá personalizar cores, logo e favicon
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Editor de Tema */}
+        <ThemeEditor />
       </div>
     );
   }

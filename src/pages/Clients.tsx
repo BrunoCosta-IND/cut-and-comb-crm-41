@@ -1,63 +1,28 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Users, Plus, Search, Phone, Mail, Calendar, TrendingUp } from 'lucide-react';
+import { Users, Search, Phone, Mail, TrendingUp } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ClientDialog } from '@/components/ClientDialog';
+import { storage } from '@/lib/storage';
+import { Client } from '@/types';
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFrequency, setFilterFrequency] = useState('all');
+  const [clients, setClients] = useState<Client[]>([]);
 
-  // Dados mockados
-  const clients = [
-    {
-      id: 1,
-      name: 'João Silva',
-      phone: '(11) 99999-9999',
-      email: 'joao@email.com',
-      frequency: 'weekly',
-      lastVisit: new Date('2024-06-15'),
-      totalVisits: 24,
-      totalSpent: 1080,
-      birthDate: new Date('1985-03-15')
-    },
-    {
-      id: 2,
-      name: 'Pedro Santos',
-      phone: '(11) 88888-8888',
-      email: 'pedro@email.com',
-      frequency: 'biweekly',
-      lastVisit: new Date('2024-06-10'),
-      totalVisits: 18,
-      totalSpent: 810,
-      birthDate: new Date('1990-07-22')
-    },
-    {
-      id: 3,
-      name: 'Lucas Oliveira',
-      phone: '(11) 77777-7777',
-      email: 'lucas@email.com',
-      frequency: 'monthly',
-      lastVisit: new Date('2024-05-20'),
-      totalVisits: 12,
-      totalSpent: 480,
-      birthDate: new Date('1988-11-30')
-    },
-    {
-      id: 4,
-      name: 'André Costa',
-      phone: '(11) 66666-6666',
-      email: 'andre@email.com',
-      frequency: 'rarely',
-      lastVisit: new Date('2024-04-15'),
-      totalVisits: 6,
-      totalSpent: 270,
-      birthDate: new Date('1992-02-18')
-    }
-  ];
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = () => {
+    const loadedClients = storage.getClients('barbershop-1');
+    setClients(loadedClients);
+  };
 
   const getFrequencyColor = (frequency: string) => {
     switch (frequency) {
@@ -79,7 +44,8 @@ export default function Clients() {
     }
   };
 
-  const getDaysSinceLastVisit = (lastVisit: Date) => {
+  const getDaysSinceLastVisit = (lastVisit?: Date) => {
+    if (!lastVisit) return 0;
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - lastVisit.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -88,7 +54,7 @@ export default function Clients() {
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.phone.includes(searchTerm) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase());
+                         (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFrequency = filterFrequency === 'all' || client.frequency === filterFrequency;
     return matchesSearch && matchesFrequency;
   });
@@ -101,10 +67,7 @@ export default function Clients() {
           <h1 className="text-3xl font-bold text-gradient">Clientes</h1>
           <p className="text-muted-foreground">Gerencie sua base de clientes</p>
         </div>
-        <Button className="gradient-gold text-black font-medium hover:opacity-90">
-          <Plus className="mr-2 h-4 w-4" />
-          Cadastrar Cliente
-        </Button>
+        <ClientDialog onClientCreated={loadClients} />
       </div>
 
       {/* Estatísticas */}
@@ -116,7 +79,10 @@ export default function Clients() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-barbershop-gold">{clients.length}</div>
-            <p className="text-xs text-muted-foreground">+2 novos este mês</p>
+            <p className="text-xs text-muted-foreground">+{clients.filter(c => {
+              const createdThisMonth = new Date(c.createdAt).getMonth() === new Date().getMonth();
+              return createdThisMonth;
+            }).length} novos este mês</p>
           </CardContent>
         </Card>
 
@@ -127,7 +93,7 @@ export default function Clients() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-barbershop-gold">
-              {clients.filter(c => getDaysSinceLastVisit(c.lastVisit) <= 30).length}
+              {clients.filter(c => c.lastVisit && getDaysSinceLastVisit(c.lastVisit) <= 30).length}
             </div>
             <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
           </CardContent>
@@ -153,7 +119,7 @@ export default function Clients() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-barbershop-gold">
-              R$ {Math.round(clients.reduce((sum, client) => sum + client.totalSpent, 0) / clients.length).toLocaleString('pt-BR')}
+              R$ {clients.length > 0 ? Math.round(clients.reduce((sum, client) => sum + client.totalSpent, 0) / clients.length).toLocaleString('pt-BR') : '0'}
             </div>
             <p className="text-xs text-muted-foreground">Valor médio gasto</p>
           </CardContent>
@@ -195,7 +161,14 @@ export default function Clients() {
               </Select>
             </div>
             <div className="flex items-end">
-              <Button variant="outline" className="w-full border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
+              <Button 
+                variant="outline" 
+                className="w-full border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterFrequency('all');
+                }}
+              >
                 Limpar Filtros
               </Button>
             </div>
@@ -220,10 +193,12 @@ export default function Clients() {
                         <Phone className="h-4 w-4" />
                         <span>{client.phone}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Mail className="h-4 w-4" />
-                        <span>{client.email}</span>
-                      </div>
+                      {client.email && (
+                        <div className="flex items-center space-x-1">
+                          <Mail className="h-4 w-4" />
+                          <span>{client.email}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -231,7 +206,9 @@ export default function Clients() {
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">Última Visita</p>
-                    <p className="font-medium">{getDaysSinceLastVisit(client.lastVisit)} dias atrás</p>
+                    <p className="font-medium">
+                      {client.lastVisit ? `${getDaysSinceLastVisit(client.lastVisit)} dias atrás` : 'Nunca'}
+                    </p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">Total de Visitas</p>
@@ -265,7 +242,12 @@ export default function Clients() {
           <CardContent className="p-12 text-center">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Nenhum cliente encontrado</h3>
-            <p className="text-muted-foreground">Tente ajustar os filtros ou cadastrar um novo cliente.</p>
+            <p className="text-muted-foreground">
+              {clients.length === 0 
+                ? 'Comece cadastrando seu primeiro cliente.' 
+                : 'Tente ajustar os filtros ou cadastrar um novo cliente.'
+              }
+            </p>
           </CardContent>
         </Card>
       )}
