@@ -1,11 +1,12 @@
-
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Plus, Search, Filter, User, Scissors, DollarSign } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AppointmentDialog } from '@/components/AppointmentDialog';
 
 export default function Appointments() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -91,10 +92,15 @@ export default function Appointments() {
           <h1 className="text-3xl font-bold text-gradient">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie todos os agendamentos da barbearia</p>
         </div>
-        <Button className="gradient-gold text-black font-medium hover:opacity-90">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Agendamento
-        </Button>
+        <div className="flex space-x-2">
+          <AppointmentDialog />
+          <Button asChild className="gradient-gold text-black font-medium hover:opacity-90">
+            <Link to="/appointments/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Página Completa
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}

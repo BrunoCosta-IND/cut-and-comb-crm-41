@@ -1,277 +1,225 @@
 
-// Sistema de armazenamento local simulando um banco de dados
 import { User, Barbershop, Client, Barber, Service, Appointment, Notification } from '@/types';
+import { mockClients, mockBarbers, mockServices, mockAppointments } from './mockData';
 
-class LocalStorage {
-  private getItem<T>(key: string): T[] {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
-  }
-
-  private setItem<T>(key: string, data: T[]): void {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
-
-  // Users
-  getUsers(): User[] {
-    return this.getItem<User>('users');
-  }
-
+class Storage {
+  // User methods
   saveUser(user: User): void {
-    const users = this.getUsers();
-    const existingIndex = users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      users[existingIndex] = user;
-    } else {
-      users.push(user);
-    }
-    this.setItem('users', users);
+    localStorage.setItem(`user-${user.id}`, JSON.stringify(user));
+    localStorage.setItem('currentUser', user.id);
   }
 
-  getUserByEmail(email: string): User | undefined {
-    return this.getUsers().find(user => user.email === email);
+  getCurrentUser(): User | null {
+    const currentUserId = localStorage.getItem('currentUser');
+    if (!currentUserId) return null;
+    
+    const userData = localStorage.getItem(`user-${currentUserId}`);
+    return userData ? JSON.parse(userData) : null;
   }
 
-  // Barbershops
-  getBarbershops(): Barbershop[] {
-    return this.getItem<Barbershop>('barbershops');
-  }
-
+  // Barbershop methods
   saveBarbershop(barbershop: Barbershop): void {
-    const barbershops = this.getBarbershops();
-    const existingIndex = barbershops.findIndex(b => b.id === barbershop.id);
-    if (existingIndex >= 0) {
-      barbershops[existingIndex] = barbershop;
-    } else {
-      barbershops.push(barbershop);
-    }
-    this.setItem('barbershops', barbershops);
+    localStorage.setItem(`barbershop-${barbershop.id}`, JSON.stringify(barbershop));
   }
 
-  getBarbershopById(id: string): Barbershop | undefined {
-    return this.getBarbershops().find(b => b.id === id);
+  getBarbershop(id: string): Barbershop | null {
+    const data = localStorage.getItem(`barbershop-${id}`);
+    return data ? JSON.parse(data) : null;
   }
 
-  // Clients
-  getClients(barbershopId: string): Client[] {
-    return this.getItem<Client>('clients').filter(c => c.barbershopId === barbershopId);
-  }
-
+  // Client methods
   saveClient(client: Client): void {
-    const clients = this.getItem<Client>('clients');
+    const clients = this.getClients(client.barbershopId);
     const existingIndex = clients.findIndex(c => c.id === client.id);
+    
     if (existingIndex >= 0) {
       clients[existingIndex] = client;
     } else {
       clients.push(client);
     }
-    this.setItem('clients', clients);
+    
+    localStorage.setItem(`clients-${client.barbershopId}`, JSON.stringify(clients));
   }
 
-  // Barbers
-  getBarbers(barbershopId: string): Barber[] {
-    return this.getItem<Barber>('barbers').filter(b => b.barbershopId === barbershopId);
+  getClients(barbershopId: string): Client[] {
+    const data = localStorage.getItem(`clients-${barbershopId}`);
+    if (data) {
+      return JSON.parse(data).map((client: any) => ({
+        ...client,
+        createdAt: new Date(client.createdAt),
+        updatedAt: new Date(client.updatedAt),
+        birthDate: client.birthDate ? new Date(client.birthDate) : undefined,
+        lastVisit: client.lastVisit ? new Date(client.lastVisit) : undefined
+      }));
+    }
+    return mockClients;
   }
 
+  deleteClient(barbershopId: string, clientId: string): void {
+    const clients = this.getClients(barbershopId);
+    const filtered = clients.filter(c => c.id !== clientId);
+    localStorage.setItem(`clients-${barbershopId}`, JSON.stringify(filtered));
+  }
+
+  // Barber methods
   saveBarber(barber: Barber): void {
-    const barbers = this.getItem<Barber>('barbers');
+    const barbers = this.getBarbers(barber.barbershopId);
     const existingIndex = barbers.findIndex(b => b.id === barber.id);
+    
     if (existingIndex >= 0) {
       barbers[existingIndex] = barber;
     } else {
       barbers.push(barber);
     }
-    this.setItem('barbers', barbers);
+    
+    localStorage.setItem(`barbers-${barber.barbershopId}`, JSON.stringify(barbers));
   }
 
-  // Services
-  getServices(barbershopId: string): Service[] {
-    return this.getItem<Service>('services').filter(s => s.barbershopId === barbershopId);
+  getBarbers(barbershopId: string): Barber[] {
+    const data = localStorage.getItem(`barbers-${barbershopId}`);
+    if (data) {
+      return JSON.parse(data).map((barber: any) => ({
+        ...barber,
+        createdAt: new Date(barber.createdAt),
+        updatedAt: new Date(barber.updatedAt)
+      }));
+    }
+    return mockBarbers;
   }
 
+  deleteBarber(barbershopId: string, barberId: string): void {
+    const barbers = this.getBarbers(barbershopId);
+    const filtered = barbers.filter(b => b.id !== barberId);
+    localStorage.setItem(`barbers-${barbershopId}`, JSON.stringify(filtered));
+  }
+
+  // Service methods
   saveService(service: Service): void {
-    const services = this.getItem<Service>('services');
+    const services = this.getServices(service.barbershopId);
     const existingIndex = services.findIndex(s => s.id === service.id);
+    
     if (existingIndex >= 0) {
       services[existingIndex] = service;
     } else {
       services.push(service);
     }
-    this.setItem('services', services);
+    
+    localStorage.setItem(`services-${service.barbershopId}`, JSON.stringify(services));
   }
 
-  // Appointments
-  getAppointments(barbershopId: string): Appointment[] {
-    return this.getItem<Appointment>('appointments').filter(a => a.barbershopId === barbershopId);
+  getServices(barbershopId: string): Service[] {
+    const data = localStorage.getItem(`services-${barbershopId}`);
+    if (data) {
+      return JSON.parse(data).map((service: any) => ({
+        ...service,
+        createdAt: new Date(service.createdAt),
+        updatedAt: new Date(service.updatedAt)
+      }));
+    }
+    return mockServices;
   }
 
+  deleteService(barbershopId: string, serviceId: string): void {
+    const services = this.getServices(barbershopId);
+    const filtered = services.filter(s => s.id !== serviceId);
+    localStorage.setItem(`services-${barbershopId}`, JSON.stringify(filtered));
+  }
+
+  // Appointment methods
   saveAppointment(appointment: Appointment): void {
-    const appointments = this.getItem<Appointment>('appointments');
+    const appointments = this.getAppointments(appointment.barbershopId);
     const existingIndex = appointments.findIndex(a => a.id === appointment.id);
+    
     if (existingIndex >= 0) {
       appointments[existingIndex] = appointment;
     } else {
       appointments.push(appointment);
     }
-    this.setItem('appointments', appointments);
+    
+    localStorage.setItem(`appointments-${appointment.barbershopId}`, JSON.stringify(appointments));
   }
 
-  // Notifications
-  getNotifications(barbershopId: string): Notification[] {
-    return this.getItem<Notification>('notifications').filter(n => n.barbershopId === barbershopId);
+  getAppointments(barbershopId: string): Appointment[] {
+    const data = localStorage.getItem(`appointments-${barbershopId}`);
+    if (data) {
+      return JSON.parse(data).map((appointment: any) => ({
+        ...appointment,
+        date: new Date(appointment.date),
+        createdAt: new Date(appointment.createdAt),
+        updatedAt: new Date(appointment.updatedAt)
+      }));
+    }
+    return mockAppointments.map(apt => ({
+      ...apt,
+      date: new Date(apt.date),
+      createdAt: new Date(apt.createdAt),
+      updatedAt: new Date(apt.updatedAt)
+    }));
   }
 
+  deleteAppointment(barbershopId: string, appointmentId: string): void {
+    const appointments = this.getAppointments(barbershopId);
+    const filtered = appointments.filter(a => a.id !== appointmentId);
+    localStorage.setItem(`appointments-${barbershopId}`, JSON.stringify(filtered));
+  }
+
+  // Notification methods
   saveNotification(notification: Notification): void {
-    const notifications = this.getItem<Notification>('notifications');
+    const notifications = this.getNotifications(notification.barbershopId);
     notifications.push(notification);
-    this.setItem('notifications', notifications);
+    localStorage.setItem(`notifications-${notification.barbershopId}`, JSON.stringify(notifications));
   }
 
-  markNotificationAsRead(id: string): void {
-    const notifications = this.getItem<Notification>('notifications');
-    const notification = notifications.find(n => n.id === id);
+  getNotifications(barbershopId: string): Notification[] {
+    const data = localStorage.getItem(`notifications-${barbershopId}`);
+    if (data) {
+      return JSON.parse(data).map((notification: any) => ({
+        ...notification,
+        createdAt: new Date(notification.createdAt)
+      }));
+    }
+    return [];
+  }
+
+  markNotificationAsRead(barbershopId: string, notificationId: string): void {
+    const notifications = this.getNotifications(barbershopId);
+    const notification = notifications.find(n => n.id === notificationId);
     if (notification) {
       notification.isRead = true;
-      this.setItem('notifications', notifications);
+      localStorage.setItem(`notifications-${barbershopId}`, JSON.stringify(notifications));
     }
   }
 
-  // Session
-  getCurrentUser(): User | null {
-    const userData = localStorage.getItem('currentUser');
-    return userData ? JSON.parse(userData) : null;
-  }
-
-  setCurrentUser(user: User): void {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-  }
-
-  clearCurrentUser(): void {
-    localStorage.removeItem('currentUser');
+  // Clear all data
+  clearAllData(): void {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('user-') || 
+          key.startsWith('barbershop-') || 
+          key.startsWith('clients-') || 
+          key.startsWith('barbers-') || 
+          key.startsWith('services-') || 
+          key.startsWith('appointments-') || 
+          key.startsWith('notifications-') ||
+          key === 'currentUser') {
+        localStorage.removeItem(key);
+      }
+    });
   }
 }
 
-export const storage = new LocalStorage();
+export const storage = new Storage();
 
-// Inicializar dados de exemplo se não existirem
+// Initialize default data function
 export const initializeDefaultData = () => {
-  // Criar usuário criador padrão
-  const creator: User = {
-    id: 'creator-1',
-    name: 'Sistema',
-    email: 'creator@barbershop.com',
-    role: 'creator',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  // Criar barbearia exemplo
-  const barbershop: Barbershop = {
-    id: 'barbershop-1',
-    name: 'Barbearia Elegante',
-    phone: '(11) 99999-9999',
-    email: 'contato@barbeariaelegante.com',
-    workingHours: {
-      monday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-      tuesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-      wednesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-      thursday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-      friday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-      saturday: { isOpen: true, openTime: '08:00', closeTime: '16:00' },
-      sunday: { isOpen: false, openTime: '08:00', closeTime: '16:00' }
-    },
-    webhooks: {
-      appointmentConfirmed: { url: '', enabled: false },
-      appointmentReminder: { url: '', enabled: false },
-      inactiveClient: { url: '', enabled: false }
-    },
-    theme: {
-      primaryColor: '#D4AF37',
-      secondaryColor: '#F4E4BC'
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  // Criar usuário administrador
-  const admin: User = {
-    id: 'admin-1',
-    name: 'João Silva',
-    email: 'admin@barbeariaelegante.com',
-    phone: '(11) 98888-8888',
-    role: 'admin',
-    barbershopId: 'barbershop-1',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  // Verificar se já existem dados
-  const existingUsers = storage.getUsers();
-  if (existingUsers.length === 0) {
-    storage.saveUser(creator);
-    storage.saveUser(admin);
-    storage.saveBarbershop(barbershop);
+  const hasInitialized = localStorage.getItem('initialized');
+  if (!hasInitialized) {
+    // Initialize with mock data
+    mockClients.forEach(client => storage.saveClient(client));
+    mockBarbers.forEach(barber => storage.saveBarber(barber));
+    mockServices.forEach(service => storage.saveService(service));
+    mockAppointments.forEach(appointment => storage.saveAppointment(appointment));
     
-    // Criar alguns serviços exemplo
-    const services: Service[] = [
-      {
-        id: 'service-1',
-        barbershopId: 'barbershop-1',
-        name: 'Corte Tradicional',
-        description: 'Corte clássico masculino',
-        price: 30,
-        duration: 30,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'service-2',
-        barbershopId: 'barbershop-1',
-        name: 'Barba',
-        description: 'Aparar e finalizar barba',
-        price: 20,
-        duration: 20,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'service-3',
-        barbershopId: 'barbershop-1',
-        name: 'Corte + Barba',
-        description: 'Pacote completo',
-        price: 45,
-        duration: 45,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-
-    services.forEach(service => storage.saveService(service));
-
-    // Criar barbeiro exemplo
-    const barber: Barber = {
-      id: 'barber-1',
-      barbershopId: 'barbershop-1',
-      name: 'Carlos Barbeiro',
-      phone: '(11) 97777-7777',
-      email: 'carlos@barbeariaelegante.com',
-      status: 'active',
-      availability: {
-        monday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        tuesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        wednesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        thursday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        friday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        saturday: { isOpen: true, openTime: '08:00', closeTime: '16:00' },
-        sunday: { isOpen: false, openTime: '08:00', closeTime: '16:00' }
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    storage.saveBarber(barber);
+    localStorage.setItem('initialized', 'true');
   }
 };

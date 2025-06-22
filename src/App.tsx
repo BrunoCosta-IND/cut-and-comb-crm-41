@@ -13,6 +13,7 @@ import { initializeDefaultData } from "@/lib/storage";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
+import NewAppointment from "./pages/NewAppointment";
 import Clients from "./pages/Clients";
 import Barbers from "./pages/Barbers";
 import Reports from "./pages/Reports";
@@ -45,6 +46,11 @@ const App = () => {
               <Route path="/appointments" element={
                 <Layout>
                   <Appointments />
+                </Layout>
+              } />
+              <Route path="/appointments/new" element={
+                <Layout>
+                  <NewAppointment />
                 </Layout>
               } />
               <Route path="/clients" element={
