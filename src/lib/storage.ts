@@ -17,6 +17,63 @@ class Storage {
     return userData ? JSON.parse(userData) : null;
   }
 
+  setCurrentUser(user: User): void {
+    localStorage.setItem('currentUser', user.id);
+    localStorage.setItem(`user-${user.id}`, JSON.stringify(user));
+  }
+
+  clearCurrentUser(): void {
+    localStorage.removeItem('currentUser');
+  }
+
+  getUserByEmail(email: string): User | null {
+    // Verificar usuários padrão do sistema
+    const defaultUsers = this.getDefaultUsers();
+    const defaultUser = defaultUsers.find(user => user.email === email);
+    if (defaultUser) {
+      return defaultUser;
+    }
+
+    // Verificar usuários salvos no localStorage
+    const keys = Object.keys(localStorage);
+    for (const key of keys) {
+      if (key.startsWith('user-')) {
+        const userData = localStorage.getItem(key);
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.email === email) {
+            return user;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  private getDefaultUsers(): User[] {
+    return [
+      {
+        id: 'creator-1',
+        name: 'Creator',
+        email: 'creator@barbershop.com',
+        role: 'creator',
+        barbershopId: 'barbershop-1',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 'admin-1',
+        name: 'Administrador',
+        email: 'admin@barbeariaelegante.com',
+        role: 'admin',
+        barbershopId: 'barbershop-1',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
   // Barbershop methods
   saveBarbershop(barbershop: Barbershop): void {
     localStorage.setItem(`barbershop-${barbershop.id}`, JSON.stringify(barbershop));
@@ -214,6 +271,19 @@ export const storage = new Storage();
 export const initializeDefaultData = () => {
   const hasInitialized = localStorage.getItem('initialized');
   if (!hasInitialized) {
+    // Inicializar barbearia padrão
+    const defaultBarbershop = {
+      id: 'barbershop-1',
+      name: 'Barbearia Elegante',
+      address: 'Rua das Flores, 123',
+      phone: '(11) 99999-9999',
+      email: 'contato@barbeariaelegante.com',
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01')
+    };
+    
+    storage.saveBarbershop(defaultBarbershop);
+    
     // Initialize with mock data
     mockClients.forEach(client => storage.saveClient(client));
     mockBarbers.forEach(barber => storage.saveBarber(barber));

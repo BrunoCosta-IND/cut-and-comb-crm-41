@@ -1,20 +1,28 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Scissors, Settings } from 'lucide-react';
+import { Scissors, Settings, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showCreatorLogin, setShowCreatorLogin] = useState(false);
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, error, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +47,7 @@ const Login = () => {
     } else {
       toast({
         title: "Erro no login",
-        description: "Email ou senha incorretos",
+        description: error || "Email ou senha incorretos",
         variant: "destructive",
       });
     }
@@ -47,8 +55,20 @@ const Login = () => {
 
   const toggleCreatorLogin = () => {
     setShowCreatorLogin(!showCreatorLogin);
-    setEmail('');
-    setPassword('');
+    setEmail(showCreatorLogin ? 'admin@barbeariaelegante.com' : 'creator@barbershop.com');
+    setPassword(showCreatorLogin ? 'admin123' : 'creator123');
+  };
+
+  const fillDemoCredentials = (type: 'admin' | 'creator') => {
+    if (type === 'admin') {
+      setEmail('admin@barbeariaelegante.com');
+      setPassword('admin123');
+      setShowCreatorLogin(false);
+    } else {
+      setEmail('creator@barbershop.com');
+      setPassword('creator123');
+      setShowCreatorLogin(true);
+    }
   };
 
   return (
@@ -85,6 +105,13 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -95,6 +122,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-background/50 border-barbershop-gold/30 focus:border-barbershop-gold"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -106,6 +134,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-background/50 border-barbershop-gold/30 focus:border-barbershop-gold"
+                  disabled={isLoading}
                 />
               </div>
               <Button 
@@ -116,6 +145,30 @@ const Login = () => {
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
+
+            {/* Botões de acesso rápido para demo */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials('admin')}
+                className="text-xs border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+                disabled={isLoading}
+              >
+                Login Admin
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials('creator')}
+                className="text-xs border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+                disabled={isLoading}
+              >
+                Login Criador
+              </Button>
+            </div>
 
             {/* Dica de credenciais para demonstração */}
             <div className="text-xs text-muted-foreground text-center p-3 bg-muted/20 rounded-lg">
@@ -134,6 +187,7 @@ const Login = () => {
             size="icon"
             className="rounded-full w-12 h-12 glass-card border-barbershop-gold/30 hover:border-barbershop-gold hover:bg-barbershop-gold/10"
             title={showCreatorLogin ? "Voltar ao login admin" : "Acesso do criador"}
+            disabled={isLoading}
           >
             <Settings className="h-4 w-4" />
           </Button>
