@@ -12,6 +12,11 @@ import { initializeDefaultData } from "@/lib/storage";
 // Pages
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Appointments from "./pages/Appointments";
+import Clients from "./pages/Clients";
+import Barbers from "./pages/Barbers";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,42 +44,27 @@ const App = () => {
               } />
               <Route path="/appointments" element={
                 <Layout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-barbershop-gold mb-4">Agendamentos</h1>
-                    <p className="text-muted-foreground">Página em desenvolvimento...</p>
-                  </div>
+                  <Appointments />
                 </Layout>
               } />
               <Route path="/clients" element={
                 <Layout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-barbershop-gold mb-4">Clientes</h1>
-                    <p className="text-muted-foreground">Página em desenvolvimento...</p>
-                  </div>
+                  <Clients />
                 </Layout>
               } />
               <Route path="/barbers" element={
                 <Layout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-barbershop-gold mb-4">Barbeiros</h1>
-                    <p className="text-muted-foreground">Página em desenvolvimento...</p>
-                  </div>
+                  <Barbers />
                 </Layout>
               } />
               <Route path="/reports" element={
                 <Layout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-barbershop-gold mb-4">Relatórios</h1>
-                    <p className="text-muted-foreground">Página em desenvolvimento...</p>
-                  </div>
+                  <Reports />
                 </Layout>
               } />
               <Route path="/settings" element={
                 <Layout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-barbershop-gold mb-4">Configurações</h1>
-                    <p className="text-muted-foreground">Página em desenvolvimento...</p>
-                  </div>
+                  <Settings />
                 </Layout>
               } />
               <Route path="*" element={<NotFound />} />
