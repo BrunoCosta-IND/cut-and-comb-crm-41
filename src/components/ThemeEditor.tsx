@@ -23,7 +23,7 @@ export function ThemeEditor() {
 
   useEffect(() => {
     // Carregar configurações atuais
-    const barbershop = storage.getBarbershopById('barbershop-1');
+    const barbershop = storage.getBarbershop('barbershop-1');
     if (barbershop?.theme) {
       setThemeData({
         primaryColor: barbershop.theme.primaryColor,
@@ -75,7 +75,7 @@ export function ThemeEditor() {
     setIsLoading(true);
     
     try {
-      const barbershop = storage.getBarbershopById('barbershop-1');
+      const barbershop = storage.getBarbershop('barbershop-1');
       if (barbershop) {
         const updatedBarbershop = {
           ...barbershop,

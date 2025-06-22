@@ -272,12 +272,38 @@ export const initializeDefaultData = () => {
   const hasInitialized = localStorage.getItem('initialized');
   if (!hasInitialized) {
     // Inicializar barbearia padrão
-    const defaultBarbershop = {
+    const defaultBarbershop: Barbershop = {
       id: 'barbershop-1',
       name: 'Barbearia Elegante',
-      address: 'Rua das Flores, 123',
       phone: '(11) 99999-9999',
       email: 'contato@barbeariaelegante.com',
+      workingHours: {
+        monday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+        tuesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+        wednesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+        thursday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+        friday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+        saturday: { isOpen: true, openTime: '08:00', closeTime: '16:00' },
+        sunday: { isOpen: false, openTime: '', closeTime: '' }
+      },
+      webhooks: {
+        appointmentConfirmed: {
+          url: 'https://n8n.exemplo.com/webhook/confirmacao',
+          enabled: true
+        },
+        appointmentReminder: {
+          url: 'https://n8n.exemplo.com/webhook/lembrete',
+          enabled: true
+        },
+        inactiveClient: {
+          url: 'https://n8n.exemplo.com/webhook/cliente-inativo',
+          enabled: false
+        }
+      },
+      theme: {
+        primaryColor: '#D4AF37',
+        secondaryColor: '#F4E4BC'
+      },
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01')
     };
