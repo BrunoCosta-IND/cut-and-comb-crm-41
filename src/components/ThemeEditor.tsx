@@ -25,7 +25,12 @@ export function ThemeEditor() {
     // Carregar configurações atuais
     const barbershop = storage.getBarbershopById('barbershop-1');
     if (barbershop?.theme) {
-      setThemeData(barbershop.theme);
+      setThemeData({
+        primaryColor: barbershop.theme.primaryColor,
+        secondaryColor: barbershop.theme.secondaryColor,
+        logo: barbershop.theme.logo || '',
+        favicon: barbershop.theme.favicon || ''
+      });
     }
   }, []);
 
@@ -74,7 +79,12 @@ export function ThemeEditor() {
       if (barbershop) {
         const updatedBarbershop = {
           ...barbershop,
-          theme: themeData,
+          theme: {
+            primaryColor: themeData.primaryColor,
+            secondaryColor: themeData.secondaryColor,
+            logo: themeData.logo || undefined,
+            favicon: themeData.favicon || undefined
+          },
           updatedAt: new Date()
         };
         
