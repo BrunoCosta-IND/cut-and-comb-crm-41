@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +33,70 @@ export function ThemeEditor() {
     }
   }, []);
 
+  const applyThemeToDocument = (primaryColor: string, secondaryColor: string, logo?: string, favicon?: string) => {
+    // Aplicar cores CSS customizadas
+    document.documentElement.style.setProperty('--barbershop-gold', primaryColor);
+    document.documentElement.style.setProperty('--barbershop-gold-light', secondaryColor);
+    
+    // Atualizar variáveis CSS do Tailwind
+    document.documentElement.style.setProperty('--primary', `${hexToHsl(primaryColor)}`);
+    
+    // Aplicar logo se fornecido
+    if (logo) {
+      // Atualizar todas as instâncias de logo no sistema
+      const logoElements = document.querySelectorAll('[data-logo]');
+      logoElements.forEach(element => {
+        if (element instanceof HTMLImageElement) {
+          element.src = logo;
+        }
+      });
+    }
+    
+    // Aplicar favicon se fornecido
+    if (favicon) {
+      updateFavicon(favicon);
+    }
+  };
+
+  const updateFavicon = (faviconUrl: string) => {
+    // Remove favicon existente
+    const existingFavicon = document.querySelector("link[rel*='icon']");
+    if (existingFavicon) {
+      existingFavicon.remove();
+    }
+    
+    // Adiciona novo favicon
+    const newFavicon = document.createElement('link');
+    newFavicon.rel = 'icon';
+    newFavicon.type = 'image/png';
+    newFavicon.href = faviconUrl;
+    document.head.appendChild(newFavicon);
+  };
+
+  const hexToHsl = (hex: string): string => {
+    // Converter hex para HSL para compatibilidade com CSS variables
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
+
   const handleColorChange = (field: string, value: string) => {
     setThemeData(prev => ({ ...prev, [field]: value }));
     
@@ -60,13 +123,22 @@ export function ThemeEditor() {
 
   const togglePreview = () => {
     if (previewMode) {
-      // Restaurar cores originais
-      document.documentElement.style.setProperty('--barbershop-gold', '#D4AF37');
-      document.documentElement.style.setProperty('--barbershop-gold-light', '#F4E4BC');
+      // Restaurar tema original
+      const originalBarbershop = storage.getBarbershop('barbershop-1');
+      if (originalBarbershop?.theme) {
+        applyThemeToDocument(
+          originalBarbershop.theme.primaryColor,
+          originalBarbershop.theme.secondaryColor,
+          originalBarbershop.theme.logo,
+          originalBarbershop.theme.favicon
+        );
+      } else {
+        // Restaurar cores padrão
+        applyThemeToDocument('#D4AF37', '#F4E4BC');
+      }
     } else {
       // Aplicar cores de preview
-      document.documentElement.style.setProperty('--barbershop-gold', themeData.primaryColor);
-      document.documentElement.style.setProperty('--barbershop-gold-light', themeData.secondaryColor);
+      applyThemeToDocument(themeData.primaryColor, themeData.secondaryColor, themeData.logo, themeData.favicon);
     }
     setPreviewMode(!previewMode);
   };
@@ -90,16 +162,33 @@ export function ThemeEditor() {
         
         storage.saveBarbershop(updatedBarbershop);
         
-        // Aplicar as cores definitivamente
-        document.documentElement.style.setProperty('--barbershop-gold', themeData.primaryColor);
-        document.documentElement.style.setProperty('--barbershop-gold-light', themeData.secondaryColor);
+        // Aplicar o tema definitivamente
+        applyThemeToDocument(
+          themeData.primaryColor, 
+          themeData.secondaryColor, 
+          themeData.logo, 
+          themeData.favicon
+        );
+        
+        // Salvar no localStorage para persistir entre sessões
+        localStorage.setItem('barbershop-theme', JSON.stringify({
+          primaryColor: themeData.primaryColor,
+          secondaryColor: themeData.secondaryColor,
+          logo: themeData.logo,
+          favicon: themeData.favicon
+        }));
         
         toast({
           title: "Tema salvo",
-          description: "As configurações de tema foram salvas com sucesso!",
+          description: "As configurações de tema foram aplicadas com sucesso!",
         });
         
         setPreviewMode(false);
+        
+        // Forçar atualização da página após 1 segundo para garantir que todas as mudanças sejam aplicadas
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       toast({
