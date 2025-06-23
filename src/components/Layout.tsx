@@ -2,7 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { TopBar } from '@/components/TopBar';
+import TopBar from '@/components/TopBar';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
