@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,14 +54,6 @@ export default function Dashboard() {
       });
     }
   }, [user]);
-
-  // Dados mockados para demonstração
-  const stats = {
-    todayAppointments: 8,
-    todayRevenue: 320,
-    monthlyRevenue: 12500,
-    newClientsThisMonth: 15
-  };
 
   const nextAppointments = [
     { id: 1, client: 'João Silva', service: 'Corte + Barba', time: '14:00', barber: 'Carlos' },
