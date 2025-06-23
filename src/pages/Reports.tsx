@@ -1,14 +1,49 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart3, TrendingUp, Download, Calendar, DollarSign, Users, Scissors } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { toast } from '@/hooks/use-toast';
 
 export default function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedBarber, setSelectedBarber] = useState('all');
+
+  const handleExportPDF = () => {
+    toast({
+      title: "Exportar PDF",
+      description: "A funcionalidade de exportar PDF será implementada em breve.",
+    });
+  };
+
+  const handleExportCSV = () => {
+    // Simular exportação CSV
+    const csvData = [
+      ['Data', 'Receita', 'Atendimentos'],
+      ['01/06', '450', '12'],
+      ['02/06', '380', '10'],
+      ['03/06', '520', '14'],
+      ['04/06', '600', '16'],
+      ['05/06', '480', '13'],
+      ['06/06', '720', '18'],
+      ['07/06', '650', '17']
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'relatorio-barbearia.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Exportar CSV",
+      description: "Relatório exportado com sucesso!",
+    });
+  };
 
   // Dados mockados para gráficos
   const revenueData = [
@@ -52,11 +87,19 @@ export default function Reports() {
           <p className="text-muted-foreground">Análise completa do desempenho da barbearia</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
+          <Button 
+            variant="outline" 
+            onClick={handleExportPDF}
+            className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+          >
             <Download className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
-          <Button variant="outline" className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
+          <Button 
+            variant="outline" 
+            onClick={handleExportCSV}
+            className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+          >
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>

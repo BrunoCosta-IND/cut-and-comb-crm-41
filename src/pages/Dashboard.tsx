@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,10 +13,46 @@ import {
   ArrowRight 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { storage } from '@/lib/storage';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    todayAppointments: 0,
+    todayRevenue: 0,
+    monthlyRevenue: 0,
+    newClientsThisMonth: 0
+  });
+
+  useEffect(() => {
+    if (user?.barbershopId) {
+      const appointments = storage.getAppointments(user.barbershopId);
+      const clients = storage.getClients(user.barbershopId);
+      
+      // Calcular estatísticas reais
+      const today = new Date();
+      const todayAppointments = appointments.filter(apt => 
+        apt.date.toDateString() === today.toDateString()
+      ).length;
+      
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthlyAppointments = appointments.filter(apt => apt.date >= monthStart);
+      const monthlyRevenue = monthlyAppointments.reduce((sum, apt) => sum + (apt.price || 50), 0);
+      
+      const newClients = clients.filter(client => 
+        client.createdAt >= monthStart
+      ).length;
+      
+      setStats({
+        todayAppointments,
+        todayRevenue: todayAppointments * 45, // Estimativa
+        monthlyRevenue,
+        newClientsThisMonth: newClients
+      });
+    }
+  }, [user]);
 
   // Dados mockados para demonstração
   const stats = {
@@ -238,7 +273,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button 
-                onClick={() => navigate('/appointments/new')}
+                onClick={() => navigate('/appointments')}
                 className="w-full gradient-gold text-black font-medium hover:opacity-90"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -247,11 +282,11 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline"
-                  onClick={() => navigate('/clients/new')}
+                  onClick={() => navigate('/clients')}
                   className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
                 >
                   <Users className="mr-2 h-4 w-4" />
-                  Cadastrar Cliente
+                  Ver Clientes
                 </Button>
                 <Button 
                   variant="outline"

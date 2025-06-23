@@ -1,73 +1,37 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Scissors, Plus, Search, Phone, Mail, Clock, User } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BarberDialog } from '@/components/BarberDialog';
+import { storage } from '@/lib/storage';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
+import { Barber } from '@/types';
 
 export default function Barbers() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedBarber, setSelectedBarber] = useState<Barber | undefined>();
 
-  // Dados mockados
-  const barbers = [
-    {
-      id: 1,
-      name: 'Carlos Silva',
-      phone: '(11) 99999-1111',
-      email: 'carlos@barbearia.com',
-      status: 'active',
-      totalAppointments: 156,
-      monthlyRevenue: 4680,
-      availability: {
-        monday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        tuesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        wednesday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        thursday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        friday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
-        saturday: { isOpen: true, openTime: '08:00', closeTime: '16:00' },
-        sunday: { isOpen: false, openTime: '', closeTime: '' }
-      }
-    },
-    {
-      id: 2,
-      name: 'Marco Santos',
-      phone: '(11) 88888-2222',
-      email: 'marco@barbearia.com',
-      status: 'active',
-      totalAppointments: 89,
-      monthlyRevenue: 2670,
-      availability: {
-        monday: { isOpen: false, openTime: '', closeTime: '' },
-        tuesday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
-        wednesday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
-        thursday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
-        friday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
-        saturday: { isOpen: true, openTime: '09:00', closeTime: '15:00' },
-        sunday: { isOpen: true, openTime: '10:00', closeTime: '14:00' }
-      }
-    },
-    {
-      id: 3,
-      name: 'João Oliveira',
-      phone: '(11) 77777-3333',
-      email: 'joao@barbearia.com',
-      status: 'inactive',
-      totalAppointments: 234,
-      monthlyRevenue: 0,
-      availability: {
-        monday: { isOpen: false, openTime: '', closeTime: '' },
-        tuesday: { isOpen: false, openTime: '', closeTime: '' },
-        wednesday: { isOpen: false, openTime: '', closeTime: '' },
-        thursday: { isOpen: false, openTime: '', closeTime: '' },
-        friday: { isOpen: false, openTime: '', closeTime: '' },
-        saturday: { isOpen: false, openTime: '', closeTime: '' },
-        sunday: { isOpen: false, openTime: '', closeTime: '' }
-      }
+  useEffect(() => {
+    if (user?.barbershopId) {
+      loadBarbers();
     }
-  ];
+  }, [user]);
+
+  const loadBarbers = () => {
+    if (user?.barbershopId) {
+      const loadedBarbers = storage.getBarbers(user.barbershopId);
+      setBarbers(loadedBarbers);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -90,9 +54,35 @@ export default function Barbers() {
     const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
     
     return days
-      .filter(day => availability[day].isOpen)
+      .filter(day => availability[day]?.isOpen)
       .map(day => dayNames[days.indexOf(day)])
       .join(', ');
+  };
+
+  const handleEditBarber = (barber: Barber) => {
+    setSelectedBarber(barber);
+    setDialogOpen(true);
+  };
+
+  const handleNewBarber = () => {
+    setSelectedBarber(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteBarber = (barberId: string) => {
+    if (user?.barbershopId && confirm('Tem certeza que deseja excluir este barbeiro?')) {
+      storage.deleteBarber(user.barbershopId, barberId);
+      loadBarbers();
+      toast({
+        title: "Barbeiro excluído",
+        description: "O barbeiro foi removido com sucesso.",
+      });
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
   };
 
   const filteredBarbers = barbers.filter(barber => {
@@ -103,6 +93,10 @@ export default function Barbers() {
     return matchesSearch && matchesStatus;
   });
 
+  const activeBarbers = barbers.filter(b => b.status === 'active').length;
+  const totalAppointments = barbers.reduce((sum, barber) => sum + (barber.totalAppointments || 0), 0);
+  const totalRevenue = barbers.reduce((sum, barber) => sum + (barber.monthlyRevenue || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -111,7 +105,10 @@ export default function Barbers() {
           <h1 className="text-3xl font-bold text-gradient">Barbeiros</h1>
           <p className="text-muted-foreground">Gerencie a equipe de barbeiros</p>
         </div>
-        <Button className="gradient-gold text-black font-medium hover:opacity-90">
+        <Button 
+          onClick={handleNewBarber}
+          className="gradient-gold text-black font-medium hover:opacity-90"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Cadastrar Barbeiro
         </Button>
@@ -136,9 +133,7 @@ export default function Barbers() {
             <User className="h-4 w-4 text-barbershop-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-barbershop-gold">
-              {barbers.filter(b => b.status === 'active').length}
-            </div>
+            <div className="text-2xl font-bold text-barbershop-gold">{activeBarbers}</div>
             <p className="text-xs text-muted-foreground">Disponíveis para atendimento</p>
           </CardContent>
         </Card>
@@ -149,9 +144,7 @@ export default function Barbers() {
             <Clock className="h-4 w-4 text-barbershop-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-barbershop-gold">
-              {barbers.reduce((sum, barber) => sum + barber.totalAppointments, 0)}
-            </div>
+            <div className="text-2xl font-bold text-barbershop-gold">{totalAppointments}</div>
             <p className="text-xs text-muted-foreground">Total de atendimentos</p>
           </CardContent>
         </Card>
@@ -163,7 +156,7 @@ export default function Barbers() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-barbershop-gold">
-              R$ {barbers.reduce((sum, barber) => sum + barber.monthlyRevenue, 0).toLocaleString('pt-BR')}
+              R$ {totalRevenue.toLocaleString('pt-BR')}
             </div>
             <p className="text-xs text-muted-foreground">Este mês</p>
           </CardContent>
@@ -203,7 +196,11 @@ export default function Barbers() {
               </Select>
             </div>
             <div className="flex items-end">
-              <Button variant="outline" className="w-full border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="w-full border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+              >
                 Limpar Filtros
               </Button>
             </div>
@@ -243,11 +240,11 @@ export default function Barbers() {
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">Atendimentos</p>
-                    <p className="font-medium">{barber.totalAppointments}</p>
+                    <p className="font-medium">{barber.totalAppointments || 0}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                    <p className="font-medium text-barbershop-gold">R$ {barber.monthlyRevenue.toLocaleString('pt-BR')}</p>
+                    <p className="font-medium text-barbershop-gold">R$ {(barber.monthlyRevenue || 0).toLocaleString('pt-BR')}</p>
                   </div>
                   <Badge className={getStatusColor(barber.status)}>
                     {getStatusText(barber.status)}
@@ -255,11 +252,21 @@ export default function Barbers() {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button size="sm" variant="outline" className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleEditBarber(barber)}
+                    className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10"
+                  >
                     Editar
                   </Button>
-                  <Button size="sm" variant="outline" className="border-barbershop-gold/30 text-barbershop-gold hover:bg-barbershop-gold/10">
-                    Horários
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleDeleteBarber(barber.id)}
+                    className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                  >
+                    Excluir
                   </Button>
                 </div>
               </div>
@@ -277,6 +284,13 @@ export default function Barbers() {
           </CardContent>
         </Card>
       )}
+
+      <BarberDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        barber={selectedBarber}
+        onSave={loadBarbers}
+      />
     </div>
   );
 }
